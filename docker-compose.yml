@@ -1,0 +1,63 @@
+# tell docker what version of the docker-compose.yml we're using
+version: '0.1'
+
+# define the network
+networks:
+  app-net:
+    ipam:
+      driver: default
+          
+# start the services section
+services:
+  # define the name of our service
+  # corresponds to the "--name" parameter
+  nginx:
+    image: webdevops/nginx:alpine
+    ports:
+      - "9090:80"
+    tty: true
+    volumes:
+      - "./src:/app"
+      - "./nginx/conf.d:/etc/nginx/conf.d"
+    depends_on:
+      - php-fpm
+    networks:
+      - app-net
+
+  php-fpm:
+    image: webdevops/php:8.1
+    ports:
+      - "9797:8787"
+    tty: true
+    volumes:
+      - "./src:/app"
+    networks:
+      - app-net
+    
+  redis:
+    image: redis:6.2.7-alpine
+    tty: true
+    volumes:
+      - "./redis/conf:/usr/local/etc/redis" 
+    networks:
+      - app-net
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  mysql:
+    image: mysql:5.7
+    tty: true
+    ports:
+      - "9096:3306"
+    volumes:
+      - "../mysql-data/app:/var/lib/mysql"
+      - "./mysql/conf.d:/etc/mysql/conf.d"
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: root
+    networks:
+      - app-net
+      
+      
+    
